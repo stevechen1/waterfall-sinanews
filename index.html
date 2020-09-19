@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>waterfall-lazyLoad-ajax</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/1.10.0/jquery.js"></script>
+    <style>
+        	html,body,ul,li,p{
+		margin: 0;
+		padding: 0;
+	}
+	ul,li{
+		list-style: none;
+	}
+    .wrap{
+        width: 1400px;
+        margin: 0 auto;
+    }
+
+	.clearfix:after{
+		content: '';
+		display: block;
+		clear: both;
+	}
+	.ct{
+		position: relative;
+		padding: 10px;
+		margin: 0 auto;
+	}
+	.ct .item{
+		width: 300px;
+		position: absolute;
+		padding: 0 0 10px 0;
+		box-shadow: 2px 2px 2px #E8E8E8, -2px -2px 2px #E8E8E8;
+		border: 1px solid #DFDFDF;
+		background: #FFF;
+		margin: 10px;
+		transition: all .8s;
+	}
+	.ct .item img{
+	    margin: 12px;
+	    width: 276px;
+	}
+	.ct .item .header{
+	  margin: 0 12px;
+	}
+	.ct .desp{
+		font-size: 12px;
+		line-height: 1.8;
+	    margin: 10px 15px 0;
+	    color: #777371;
+	}
+	#load{
+		visibility: hidden;
+		height: 20px;
+	}
+    .hide{
+		display: none;
+	}
+        
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="ct-waterfall">
+            <ul id="pic-ct" class="ct">
+                <!-- <li class="item">
+                    <a href="#" class="link">
+                        <img src="https://k.sinaimg.cn/n/mil/transform/200/w600h400/20200822/82c8-iyaiihm1908197.jpg/w640slw.jpg" alt="">
+                    </a>
+                        <h4 class="header">标题标题标题标题标题标题标题标题</h4>
+                        <p class="desp">当地当地当地当地当地当地当地当地当地地当地当地当地当地</p>
+                </li> -->
+                <li class="item hide"></li>
+            </ul>
+            <div id="load">11111111</div>
+        </div>
+    </div>
+</body>    
+<script src="waterfall.js"></script>
+<script src="a.js"></script>
+   <script >
+   var curPage = 1
+   var perPageCount = 10
+   var colSumHeight = []
+   var nodeWidth = $('.item').outerWidth(true)
+   var colNum = parseInt($('#pic-ct').width()/nodeWidth)
+   for(var i = 0;i< colNum;i++){
+       colSumHeight[i] = 0
+   }
+   var isDataArriver = true
+   start()
+   
+   function start(){
+       getData(function(newsList){
+           isDataArriver = true
+           $.each(newsList, function(idx, news){
+               var $node = getNode(news)
+               $node.find('img').load(function(){
+                   $('#pic-ct').append($node)
+                   waterFallPlace($node)
+               })
+           })
+       })
+       isDataArriver = false
+   }
+   
+   $(window).scroll(function(){
+       if(!isDataArriver) return
+       if(isVisible($('#load'))){
+           start()
+       }
+   })
+
+   function getData(callback){
+       $.ajax({
+           url: 'https://photo.sina.cn/aj/v2/index?cate=military',
+           dataType: 'jsonp',
+           data: {
+               pagesize: perPageCount,
+               page: curPage
+           }
+       }).done(function(ret){
+           if(ret && ret.code ==1 ){
+                callback(ret.data)
+                curPage++
+           }else{
+               console.log('get error data')
+           }
+       })
+   }
+
+   function getNode(item){
+       var tpl =''
+        tpl += '<li class="item">';
+		tpl += ' <a href="'+ item.url +'" class="link"><img src="' + item.thumb + '" alt=""></a>';
+		tpl += ' <h4 class="header">'+ item.stitle +'</h4>';
+		tpl += '<p class="desp">' + item.title +'</p>';
+		tpl += '</li>';
+	
+	return $(tpl)
+
+   }
+
+   function waterFallPlace($node){
+       var idx = 0,minSumHeight = colSumHeight[0]
+       for(var i=0;i<colSumHeight.length;i++){
+           if(colSumHeight[i] < minSumHeight){
+               idx = i
+               minSumHeight = colSumHeight[i]
+           }
+           console.log('a')
+       }
+       $node.css({
+           left: nodeWidth*idx,
+           top: minSumHeight,
+           opacity: 1
+       })
+       colSumHeight[idx] = $node.outerHeight(true) + colSumHeight[idx]
+       $('#pic-ct').height(Math.max.apply(null,colSumHeight))
+   }
+   function isVisible($el){
+       var scrollH = $(window).scrollTop(),
+       winH = $(window).height(),
+       top = $el.offset().top
+       if(top < winH + scrollH){
+           return true
+       }else{
+           return false
+       }
+   }
+
+    </script> 
+
+</html>
